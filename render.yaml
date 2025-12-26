@@ -1,0 +1,22 @@
+databases:
+  - name: amigo_secreto_db
+    plan: free
+    databaseName: amigo_secreto
+    user: amigo_secreto_user
+
+services:
+  - type: web
+    plan: free
+    name: amigo-secreto
+    runtime: python
+    buildCommand: './build.sh'
+    startCommand: 'gunicorn amigo_secreto.asgi:application -k uvicorn.workers.UvicornWorker'
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: amigo_secreto_db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: 4

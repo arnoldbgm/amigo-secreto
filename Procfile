@@ -1,1 +1,0 @@
-web: gunicorn amigo_secreto.wsgi
