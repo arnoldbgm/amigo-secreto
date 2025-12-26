@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Bienvenido al Amigo Secreto Predictor{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex flex-col items-center justify-center text-center">
+    
+    <!-- Header -->
+    <div class="mb-10">
+        <h1 class="text-5xl font-bold text-slate-900">
+            Amigo Secreto <span class="text-blue-600">Predictor</span>
+        </h1>
+        <p class="mt-2 text-lg text-slate-600">¿Quién le regala a quién? ¡Adivina y gana!</p>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-8 w-full max-w-lg">
+        {% for message in messages %}
+            {% if 'error' in message.tags %}
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md" role="alert">
+                <p class="font-bold"><i class="bi bi-exclamation-triangle-fill mr-2"></i>Error</p>
+                <p>{{ message }}</p>
+            </div>
+            {% elif 'success' in message.tags %}
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-md" role="alert">
+                <p class="font-bold"><i class="bi bi-check-circle-fill mr-2"></i>Éxito</p>
+                <p>{{ message }}</p>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content: Create or Join -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+
+        <!-- Create a New Room Card -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+            <div class="flex flex-col items-center">
+                <i class="bi bi-plus-circle-dotted text-blue-600 text-5xl mb-4"></i>
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Crear una Nueva Sala</h2>
+                <p class="text-slate-600 mb-6">Inicia un nuevo juego y comparte el código con tus amigos.</p>
+                <form method="post" action="{% url 'core:home' %}" class="w-full space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_room">
+                    <div>
+                        <label for="admin_name" class="sr-only">Tu Nombre (Admin):</label>
+                        <input type="text" id="admin_name" name="admin_name" required placeholder="Tu nombre como Admin"
+                               class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    <button type="submit"
+                            class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <i class="bi bi-stars mr-2"></i>
+                        Crear Sala
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Join an Existing Room Card -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+            <div class="flex flex-col items-center">
+                <i class="bi bi-joystick text-green-600 text-5xl mb-4"></i>
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Unirse a una Sala</h2>
+                <p class="text-slate-600 mb-6">¿Ya tienes un código? Ingrésalo aquí para unirte al juego.</p>
+                <form method="post" action="{% url 'core:home' %}" class="w-full space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="join_room">
+                    <div>
+                        <label for="room_code" class="sr-only">Código de Sala:</label>
+                        <input type="text" id="room_code" name="room_code" required maxlength="6" placeholder="Código de la sala"
+                               class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase placeholder:normal-case">
+                    </div>
+                    <button type="submit"
+                            class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                        <i class="bi bi-box-arrow-in-right mr-2"></i>
+                        Unirse a la Sala
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

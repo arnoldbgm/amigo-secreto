@@ -1,0 +1,117 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Haz tus Predicciones | {{ room.code }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold text-slate-900">
+        <i class="bi bi-lightbulb-fill text-blue-600 mr-2"></i>Haz tus Predicciones
+    </h1>
+    <p class="mt-1 text-lg text-slate-600">
+        Adivina quién regala a quién en la sala <strong class="font-semibold text-slate-800">{{ room.code }}</strong>.
+    </p>
+    {% if room.status != room.STATUS_PREDICTING %}
+        <div class="mt-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg shadow-md" role="alert">
+            <div class="flex">
+                <div class="py-1"><i class="bi bi-exclamation-triangle-fill mr-3 text-xl"></i></div>
+                <div>
+                    <p class="font-bold">Predicciones Bloqueadas</p>
+                    <p class="text-sm">El administrador ha bloqueado las predicciones. No puedes realizar o modificar tus predicciones ahora.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Messages -->
+{% if messages %}
+<div class="mb-6 w-full">
+    {% for message in messages %}
+        {% if 'error' in message.tags %}
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md mb-2" role="alert">
+            <div class="flex">
+                <div class="py-1"><i class="bi bi-exclamation-triangle-fill mr-3 text-xl"></i></div>
+                <div>
+                    <p class="font-bold">Error</p>
+                    <p class="text-sm">{{ message }}</p>
+                </div>
+            </div>
+        </div>
+        {% elif 'success' in message.tags %}
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-md mb-2" role="alert">
+            <div class="flex">
+                <div class="py-1"><i class="bi bi-check-circle-fill mr-3 text-xl"></i></div>
+                <div>
+                    <p class="font-bold">Éxito</p>
+                    <p class="text-sm">{{ message }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'core:prediction' %}" class="space-y-6">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for receiver in receivers_to_predict_for %}
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="bi bi-person-fill text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-slate-800">
+                        {% if receiver.id == current_participant.id %}
+                            ¿Quién te regala a ti (<span class="text-purple-600">{{ receiver.name }}</span>)?
+                        {% else %}
+                            ¿Quién le regala a <span class="text-purple-600">{{ receiver.name }}</span>?
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="relative">
+                    <select id="giver_for_{{ receiver.id }}" name="giver_for_{{ receiver.id }}"
+                            class="block appearance-none w-full bg-white border border-slate-300 text-slate-700 py-3 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                            {% if room.status != room.STATUS_PREDICTING %} disabled {% endif %}>
+                        <option value="">-- Selecciona un Amigo Secreto --</option>
+                        {% for giver in possible_givers %}
+                            {% if giver.id != receiver.id %} {# A person cannot gift to themselves #}
+                                <option value="{{ giver.id }}" {% if predictions_map|get_item:receiver.id == giver.id %}selected{% endif %}>
+                                    {{ giver.name }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-700">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-center text-slate-500 text-lg py-10">
+                <i class="bi bi-info-circle mr-2"></i>No hay otros participantes en la sala para hacer predicciones.
+            </p>
+        {% endfor %}
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-4">
+        <button type="submit" name="action" value="save_predictions"
+                class="flex-1 sm:flex-none flex items-center justify-center py-3 px-6 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors
+                {% if room.status != room.STATUS_PREDICTING %} opacity-50 cursor-not-allowed {% endif %}"
+                {% if room.status != room.STATUS_PREDICTING %} disabled {% endif %}>
+            <i class="bi bi-save mr-2"></i>
+            Guardar Predicciones
+        </button>
+        <button type="submit" name="confirm_all"
+                class="flex-1 sm:flex-none flex items-center justify-center py-3 px-6 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors
+                {% if room.status != room.STATUS_PREDICTING %} opacity-50 cursor-not-allowed {% endif %}"
+                {% if room.status != room.STATUS_PREDICTING %} disabled {% endif %}>
+            <i class="bi bi-send mr-2"></i>
+            Confirmar y Enviar
+        </button>
+    </div>
+</form>
+{% endblock %}
+

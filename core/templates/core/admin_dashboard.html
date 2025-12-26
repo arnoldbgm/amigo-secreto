@@ -1,0 +1,162 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Admin Dashboard | {{ room.code }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold text-slate-900">
+        Panel de Administración <span class="text-blue-600">({{ room.code }})</span>
+    </h1>
+    <p class="mt-1 text-lg text-slate-600">Gestiona el juego de Amigo Secreto.</p>
+</div>
+
+<!-- Messages -->
+{% if messages %}
+<div class="mb-6 w-full">
+    {% for message in messages %}
+        {% if 'error' in message.tags %}
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md mb-2" role="alert">
+            <div class="flex">
+                <div class="py-1"><i class="bi bi-exclamation-triangle-fill mr-3 text-xl"></i></div>
+                <div>
+                    <p class="font-bold">Error</p>
+                    <p class="text-sm">{{ message }}</p>
+                </div>
+            </div>
+        </div>
+        {% elif 'success' in message.tags %}
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-md mb-2" role="alert">
+            <div class="flex">
+                <div class="py-1"><i class="bi bi-check-circle-fill mr-3 text-xl"></i></div>
+                <div>
+                    <p class="font-bold">Éxito</p>
+                    <p class="text-sm">{{ message }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Game Controls and Manual Revelation -->
+    <div class="lg:col-span-2 space-y-8">
+        <!-- Game Controls -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg h-fit">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center">
+                <i class="bi bi-controller mr-3 text-blue-600"></i>Controles del Juego
+            </h2>
+            <div class="mb-6">
+                <p class="text-lg text-slate-700">Estado actual de la sala: <span class="font-semibold text-blue-600">{{ room_status_display }}</span></p>
+            </div>
+
+            <form method="post" action="{% url 'core:admin_dashboard' %}" class="space-y-4">
+                {% csrf_token %}
+                <!-- Generate Assignments -->
+                <button type="submit" name="action" value="generate_assignments"
+                        class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors
+                        {% if room.status == 'results' %} opacity-50 cursor-not-allowed {% endif %}"
+                        {% if room.status == 'results' %} disabled {% endif %}>
+                    <i class="bi bi-shuffle mr-2"></i>
+                    Generar Sorteo de Amigo Secreto
+                </button>
+                <p class="text-sm text-slate-500 text-center">Esto asignará aleatoriamente un amigo secreto a cada participante.</p>
+
+                <!-- Lock Predictions -->
+                <button type="submit" name="action" value="lock_predictions"
+                        class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors
+                        {% if room.status != 'predicting' %} opacity-50 cursor-not-allowed {% endif %}"
+                        {% if room.status != 'predicting' %} disabled {% endif %}>
+                    <i class="bi bi-lock-fill mr-2"></i>
+                    Bloquear Predicciones
+                </button>
+                <p class="text-sm text-slate-500 text-center">Nadie podrá hacer más predicciones después de esto.</p>
+
+                <!-- Enable Results -->
+                <button type="submit" name="action" value="enable_results"
+                        class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors
+                        {% if not assignments_exist or room.status == 'results' %} opacity-50 cursor-not-allowed {% endif %}"
+                        {% if not assignments_exist or room.status == 'results' %} disabled {% endif %}>
+                    <i class="bi bi-award-fill mr-2"></i>
+                    Habilitar Resultados
+                </button>
+                <p class="text-sm text-slate-500 text-center">Revela quién es el amigo secreto de todos y el ranking de predicciones.</p>
+            </form>
+        </div>
+
+        <!-- Manual Assignment Revelation -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center">
+                <i class="bi bi-hand-index-thumb mr-3 text-red-600"></i>Revelación Manual
+            </h2>
+            <p class="text-slate-600 mb-6">Asigna manualmente quién fue el amigo secreto de cada participante. Esto sobrescribirá cualquier sorteo previo.</p>
+
+            {% if all_participants %}
+                <form method="post" action="{% url 'core:admin_dashboard' %}" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="manual_assign_givers">
+                    {% for receiver in all_participants %}
+                        <div class="flex items-center space-x-3">
+                            <label for="giver_for_manual_{{ receiver.id }}" class="block text-lg font-medium text-slate-700 w-1/3">{{ receiver.name }}:</label>
+                            <div class="relative flex-grow">
+                                <select id="giver_for_manual_{{ receiver.id }}" name="giver_for_manual_{{ receiver.id }}" required
+                                        class="block appearance-none w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                                    <option value="">Selecciona su Amigo Secreto</option>
+                                    {% for giver in all_participants %}
+                                        {% if giver.id != receiver.id %} {# A person cannot gift to themselves #}
+                                            <option value="{{ giver.id }}" 
+                                                {% for assignment in actual_assignments_display %}
+                                                    {% if assignment.receiver_id == receiver.id and assignment.giver_id == giver.id %}
+                                                        selected
+                                                    {% endif %}
+                                                {% endfor %}
+                                            >
+                                                {{ giver.name }}
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-700">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <button type="submit"
+                            class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors mt-6">
+                        <i class="bi bi-check-circle-fill mr-2"></i>
+                        Guardar Asignaciones Manuales
+                    </button>
+                </form>
+            {% else %}
+                <p class="text-slate-500">No hay participantes para asignar amigos secretos.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Participants List -->
+    <div class="bg-white p-6 rounded-2xl shadow-lg h-fit">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center">
+            <i class="bi bi-people-fill mr-3 text-blue-600"></i>Participantes ({{ all_participants|length }})
+        </h2>
+        {% if all_participants %}
+        <ul class="divide-y divide-slate-200">
+            {% for p in all_participants %}
+            <li class="flex items-center justify-between py-3">
+                <span class="text-slate-700 text-lg">{{ p.name }}</span>
+                {% if p.is_admin %}
+                    <span class="text-sm font-semibold text-green-800 bg-green-200 px-3 py-1 rounded-full"><i class="bi bi-star-fill mr-1"></i>Admin</span>
+                {% else %}
+                    <span class="text-sm text-slate-500">Participante</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-slate-500">No hay participantes aún en esta sala.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,187 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mx-auto max-w-4xl p-4 mt-6">
+    <!-- Header -->
+    <div class="mb-10">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold text-slate-900">
+                    Amigo Secreto <span class="text-blue-600">Predictor</span>
+                </h1>
+                <p class="mt-1 text-lg text-slate-600">Bienvenido a la sala: <span class="font-semibold text-blue-600">{{ room.code }}</span></p>
+            </div>
+            <div class="flex items-center bg-white p-3 rounded-xl shadow-sm">
+                <i class="bi bi-person-circle text-2xl text-blue-600 mr-3"></i>
+                <div>
+                    <p class="text-sm text-slate-500">Hola,</p>
+                    <p class="font-bold text-slate-800">{{ participant.name }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-6">
+        <!-- Left Column: User Info and Actions -->
+        <div class="md:w-2/3 space-y-6">
+            <!-- Room Info Card -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <!-- Prediction Progress -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <p class="text-sm font-semibold text-slate-500">Progreso de Predicciones</p>
+                        <span class="text-sm font-bold text-slate-600">{{ completed_predictions_count }} de {{ required_predictions_per_user }}</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        {% with percentage_complete=completed_predictions_count|mul:100|div:required_predictions_per_user %}
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {% if percentage_complete %}{{ percentage_complete }}{% else %}0{% endif %}%"></div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Make Predictions Action -->
+                <a href="{% url 'core:prediction' %}" class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col items-center text-center">
+                    <div class="bg-blue-100 p-4 rounded-full mb-4">
+                        <i class="bi bi-magic text-4xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">
+                        {% if completed_predictions_count > 0 %}
+                            Editar Predicciones
+                        {% else %}
+                            Hacer Predicciones
+                        {% endif %}
+                    </h3>
+                    <p class="text-slate-500 text-sm">Adivina quién regala a quién.</p>
+                </a>
+
+                <!-- Results Action -->
+                <a href="{% url 'core:results' %}" class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col items-center text-center">
+                    <div class="bg-green-100 p-4 rounded-full mb-4">
+                        <i class="bi bi-trophy-fill text-4xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Ver Resultados</h3>
+                    <p class="text-slate-500 text-sm">Ranking y amigo secreto.</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Right Column: Room Info -->
+        <div class="md:w-1/3 bg-white p-6 rounded-2xl shadow-lg h-fit">
+            <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-3">Información de la Sala</h3>
+            <div class="space-y-4">
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-500">Estado del Juego</h4>
+                    <p class="font-bold text-lg
+                        {% if room.status == room.STATUS_PREDICTING %}text-blue-600
+                        {% elif room.status == room.STATUS_LOCKED %}text-yellow-600
+                        {% else %}text-green-600{% endif %}">
+                        <i class="bi
+                            {% if room.status == room.STATUS_PREDICTING %}bi-lightbulb
+                            {% elif room.status == room.STATUS_LOCKED %}bi-lock
+                            {% else %}bi-award{% endif %} mr-2">
+                        </i>
+                        {{ room.get_status_display }}
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-500">Total Participantes</h4>
+                    <p class="font-semibold text-lg text-slate-800">
+                        <i class="bi bi-people-fill mr-2 text-slate-400"></i><span id="participant-count">{{ total_participants }}</span>
+                    </p>
+                </div>
+
+                <div class="pt-4 border-t">
+                    <h4 class="text-sm font-semibold text-slate-500 mb-2">Participantes en la sala</h4>
+                    <ul id="participant-list" class="space-y-2">
+                        {% for p_name in participants_list %}
+                            <li class="text-slate-600">{{ p_name }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="pt-4 border-t">
+                    <button id="shareRoomBtn" data-room-code="{{ room.code }}" class="w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <i class="bi bi-share-fill mr-2"></i>
+                        Compartir Sala
+                    </button>
+                    <p id="shareMessage" class="text-xs text-center text-green-600 mt-2 hidden">¡Código copiado!</p>
+                </div>
+
+                {% if is_admin %}
+                <div class="pt-4 border-t">
+                    <h4 class="text-sm font-semibold text-slate-500 mb-2">Panel de Administrador</h4>
+                    <a href="{% url 'core:admin_dashboard' %}" class="w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm font-semibold text-white bg-slate-700 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors">
+                        <i class="bi bi-gear-wide-connected mr-2"></i>
+                        Gestionar Sala
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="pt-4 border-t">
+                     <button onclick="alert('Funcionalidad para salir de la sala aún no implementada.')" class="w-full text-sm text-slate-500 hover:text-red-600 hover:underline transition-colors">
+                        Salir de esta sala
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('shareRoomBtn').addEventListener('click', function() {
+        const roomCode = this.getAttribute('data-room-code');
+        navigator.clipboard.writeText(roomCode).then(function() {
+            const shareMessage = document.getElementById('shareMessage');
+            shareMessage.classList.remove('hidden');
+            setTimeout(() => {
+                shareMessage.classList.add('hidden');
+            }, 2000);
+        }).catch(function(err) {
+            console.error('Could not copy text: ', err);
+            alert('Error al copiar el código de la sala.');
+        });
+    });
+
+    const roomCode = "{{ room.code }}";
+    const socket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/room/'
+        + roomCode
+        + '/'
+    );
+
+    socket.onopen = function(e) {
+        console.log('Chat socket opened.');
+    };
+
+    socket.onmessage = function(e) {
+        console.log('Message received:', e.data);
+        const data = JSON.parse(e.data);
+        if (data.type === 'participant_update') {
+            console.log('Updating participant list:', data.participants);
+            const participantList = document.getElementById('participant-list');
+            const participantCount = document.getElementById('participant-count');
+            
+            participantList.innerHTML = '';
+            data.participants.forEach(participant => {
+                const li = document.createElement('li');
+                li.className = 'text-slate-600';
+                li.textContent = participant;
+                participantList.appendChild(li);
+            });
+
+            participantCount.textContent = data.participants.length;
+        }
+    };
+
+    socket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+</script>
+{% endblock content %}

@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Elige tu Nombre{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex flex-col items-center justify-center">
+
+    <div class="w-full max-w-lg">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                {% if 'error' in message.tags %}
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md" role="alert">
+                    <p class="font-bold"><i class="bi bi-exclamation-triangle-fill mr-2"></i>Error</p>
+                    <p>{{ message }}</p>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Choose Name Card -->
+        <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-xl text-center">
+            <i class="bi bi-person-plus-fill text-blue-600 text-6xl mb-4"></i>
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">¡Casi estás dentro!</h1>
+            <p class="text-slate-600 mb-6">Te unes a la sala <strong class="font-semibold text-slate-900 px-3 py-1 bg-slate-200 rounded-lg">{{ room_code }}</strong>. Elige un nombre para que los demás te reconozcan.</p>
+
+            <form method="post" action="{% url 'core:choose_name' %}" class="space-y-6">
+                {% csrf_token %}
+                <div>
+                    <label for="name" class="sr-only">Tu Nombre:</label>
+                    <input type="text" id="name" name="name" required placeholder="Escribe tu nombre aquí"
+                           class="w-full px-4 py-3 text-lg border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                <button type="submit"
+                        class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="bi bi-check-lg mr-2"></i>
+                    Confirmar y Entrar
+                </button>
+            </form>
+        </div>
+        <div class="text-center mt-6">
+            <a href="{% url 'core:home' %}" class="text-sm text-slate-600 hover:text-blue-600 hover:underline">
+                <i class="bi bi-arrow-left mr-1"></i>
+                Volver al inicio
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

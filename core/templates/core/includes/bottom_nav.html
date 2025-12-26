@@ -1,0 +1,22 @@
+<nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-3 border-t border-slate-200 md:hidden z-10">
+    <ul class="flex justify-around items-center">
+        <li>
+            <a href="{% url 'core:dashboard' %}" class="flex flex-col items-center p-2 rounded-lg {% if request.resolver_match.url_name == 'dashboard' %}text-blue-600 bg-blue-50{% else %}text-slate-500 hover:text-blue-600 hover:bg-slate-50{% endif %} transition-colors">
+                <i class="bi bi-house-door-fill text-xl"></i>
+                <span class="text-xs mt-1">Inicio</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:prediction' %}" class="flex flex-col items-center p-2 rounded-lg {% if request.resolver_match.url_name == 'prediction' %}text-blue-600 bg-blue-50{% else %}text-slate-500 hover:text-blue-600 hover:bg-slate-50{% endif %} transition-colors">
+                <i class="bi bi-lightbulb-fill text-xl"></i>
+                <span class="text-xs mt-1">Predecir</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'core:results' %}" class="flex flex-col items-center p-2 rounded-lg {% if request.resolver_match.url_name == 'results' %}text-blue-600 bg-blue-50{% else %}text-slate-500 hover:text-blue-600 hover:bg-slate-50{% endif %} transition-colors">
+                <i class="bi bi-award-fill text-xl"></i>
+                <span class="text-xs mt-1">Resultados</span>
+            </a>
+        </li>
+    </ul>
+</nav>
