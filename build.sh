@@ -3,10 +3,10 @@
 set -o errexit
 
 # Install Node.js dependencies
-npm install
+# npm install
 
-# Build Tailwind CSS
-npm run build:css
+# # Build Tailwind CSS
+# npm run build:css
 
 pip install -r requirements.txt
 
