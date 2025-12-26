@@ -10,7 +10,7 @@ services:
     name: amigo-secreto
     runtime: python
     buildCommand: './build.sh'
-    startCommand: 'gunicorn amigo_secreto.asgi:application -k uvicorn.workers.UvicornWorker'
+    startCommand: 'gunicorn amigo_secreto.wsgi:application'
     envVars:
       - key: DATABASE_URL
         fromDatabase:

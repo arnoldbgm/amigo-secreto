@@ -4,8 +4,6 @@ from .models import Room, Participant, Prediction, generate_room_code, Assignmen
 from django.contrib import messages
 from django.db.models import Count
 import random
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 def home_view(request):
     """
@@ -69,16 +67,6 @@ def choose_name_view(request):
             request.session['participant_id'] = new_participant.id
             messages.success(request, f"¡Bienvenido, {participant_name}!")
             
-            # Send message to channel layer
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'room_{room.code}',
-                {
-                    'type': 'participant_update',
-                    'participants': list(room.participants.values_list('name', flat=True))
-                }
-            )
-
             return redirect(reverse('core:dashboard'))
     
     return render(request, 'core/choose_name.html', {'room_code': room_code})
